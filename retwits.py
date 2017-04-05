@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 import redis
-import random, time
+import os, sys, random, time
 
 n_users = 1000
 len_timeline = 50
@@ -57,8 +57,10 @@ def register():
     ops += 1
 
 if __name__ == '__main__':
-    init()
-    count = 10*1000
+    if len(sys.argv) == 2 and sys.argv[1] == 'init':
+        init()
+        sys.exit()
+    count = 100*1000
     start = time.time()
     for i in range(count):
         rand = random.random()
