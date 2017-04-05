@@ -24,7 +24,10 @@ def post():
     uid = random.randint(0, n_users)
     pid = r.incr('next_post_id')
     status = 'this is a status for ' + str(pid) + ' from ' + str(uid)
-    r.hmset('post:'+str(pid), 'user_id', uid, 'time', int(time.time()), 'body', status)
+    r.hmset('post:'+str(pid),
+                {'user_id': uid,
+                 'time': int(time.time()),
+                 'body': status})
     followers = r.zrange('followers:'+str(uid), 0, -1)
     for fid in followers:
         r.lpush('posts:'+str(fid), pid)
@@ -45,13 +48,13 @@ def register():
 
 if __name__ == '__main__':
     init()
-    for i in range(1):
+    for i in range(100):
         rand = random.random()
         if rand < 0.05:
             register()
         elif rand < 0.20:
             follow()
         elif rand < 0.50:
-            post
+            post()
         else:
             timeline()
