@@ -6,8 +6,10 @@ import random, time
 n_users = 1000
 len_timeline = 50
 r = redis.StrictRedis(host='localhost', port=6379, db=0)
+ops = 0
 
 def init():
+    r.flushall()
     for i in range(1000):
         register()
     for i in range(8*1000):
@@ -19,6 +21,8 @@ def follow():
     ti = int(time.time())
     r.zadd('following:'+str(uid), ti, fuid)
     r.zadd('followers:'+str(fuid), ti, uid)
+    global ops
+    ops += 2
 
 def post():
     uid = random.randint(0, n_users)
@@ -34,21 +38,29 @@ def post():
         r.ltrim('posts:'+str(fid), 0, len_timeline)
     r.lpush('timeline', pid)
     r.ltrim('timeline', 0, len_timeline)
+    global ops
+    ops += 5 + 2*len(followers)
 
 def timeline():
     uid = random.randint(0, n_users)
     posts = r.lrange('posts:'+str(uid), 0, -1)
     for pid in posts:
         post = r.hgetall('post:'+str(pid))
+    global ops
+    ops += 1+len(posts)
 
 def register():
-    global n_users
     pid = r.incr('next_user_id')
+    global n_users
     n_users = pid
+    global ops
+    ops += 1
 
 if __name__ == '__main__':
     init()
-    for i in range(100):
+    count = 10*1000
+    start = time.time()
+    for i in range(count):
         rand = random.random()
         if rand < 0.05:
             register()
@@ -58,3 +70,6 @@ if __name__ == '__main__':
             post()
         else:
             timeline()
+    end = time.time()
+    print 'txns/sec:', count/(end-start)
+    print 'ops/sec:', ops/(end-start)
